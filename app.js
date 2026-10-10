@@ -160,8 +160,14 @@ function plural(n, one, few, many) {
 // --- вход через Hugging Face ---
 // Гостям Hugging Face даёт всего несколько переводов в день (лимит по IP). Вошедший переводит со своим
 // лимитом: 5 минут видеокарты в день на бесплатном аккаунте. Права — только имя и аватар (openid profile).
-// Кнопка есть только на странице, размещённой на Hugging Face: там страница получает OAUTH_CLIENT_ID.
+// Номер «приложения для входа»: на странице в Hugging Face его подставляет сам Hugging Face (README: hf_oauth),
+// на GitHub Pages и ekitil.com — наше приложение EkiTil из настроек аккаунта Hugging Face. На своём компьютере
+// входа нет.
 const HUB = "https://cdn.jsdelivr.net/npm/@huggingface/hub@2/+esm";
+const OWN_OAUTH_HOSTS = ["xxldar.github.io", "ekitil.com", "www.ekitil.com"];
+const OWN_OAUTH_CLIENT_ID = "e176b377-fe64-4ab0-b834-28d49819c947";  // не секрет: виден любому посетителю
+const OAUTH_CLIENT_ID = window.huggingface?.variables?.OAUTH_CLIENT_ID ||
+  (OWN_OAUTH_HOSTS.includes(location.hostname) ? OWN_OAUTH_CLIENT_ID : "");
 const AUTH_KEY = "ekitil-oauth";
 let auth = null;  // {accessToken, accessTokenExpiresAt, userInfo}
 
@@ -184,7 +190,10 @@ function renderAuth() {
 
 async function login() {
   const { oauthLoginUrl } = await import(HUB);
-  const url = await oauthLoginUrl({ scopes: "openid profile" });
+  const url = await oauthLoginUrl(window.huggingface?.variables?.OAUTH_CLIENT_ID
+    ? { scopes: "openid profile" }  // на Hugging Face — как было
+    // адрес возврата — точно как в настройках приложения EkiTil, без ?параметров
+    : { scopes: "openid profile", clientId: OAUTH_CLIENT_ID, redirectUrl: location.origin + location.pathname });
   // внутри рамки на huggingface.co вход открываем в новой вкладке, иначе браузер может не сохранить вход
   if (window.top !== window.self) window.open(url, "_blank");
   else location.href = url;
@@ -200,7 +209,7 @@ function logout() {
 }
 
 async function initAuth() {
-  if (!window.huggingface?.variables?.OAUTH_CLIENT_ID) return;  // не на Hugging Face — без входа
+  if (!OAUTH_CLIENT_ID) return;  // нет приложения для входа (например, на своём компьютере) — без входа
   $("auth").hidden = false;
   auth = loadAuth();
   if (!auth && /[?&](code|state)=/.test(location.search)) {
