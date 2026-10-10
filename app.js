@@ -406,6 +406,7 @@ function openReport() {
   $("report-tr").textContent = current;
   $("report-suggestion").value = "";
   $("report-comment").value = "";
+  $("report-source").value = "";
   $("report-website").value = "";
   reportError("");
   reportDialog.showModal();
@@ -424,6 +425,7 @@ async function sendReport(e) {
     const client = await getSpace();
     await client.predict("/report", {
       direction, kind: lastKind, src: lastText, translation: current, suggestion, comment,
+      source: $("report-source").value.trim(),
       client: clientId(), token: auth ? auth.accessToken : "", website: $("report-website").value,
     });
     reportDialog.close();

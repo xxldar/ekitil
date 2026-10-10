@@ -103,7 +103,7 @@ button, textarea { font: inherit; color: inherit; }
   max-height: 96px;
   overflow-y: auto;
 }
-.dialog__field textarea {
+.dialog__field textarea, .dialog__input {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -116,8 +116,9 @@ button, textarea { font: inherit; color: inherit; }
   resize: vertical;
   outline: 0;
 }
-.dialog__field textarea:focus { border-color: var(--accent-soft); }
-.dialog__field textarea::placeholder { color: var(--muted); }
+.dialog__input { min-height: 0; resize: none; }
+.dialog__field textarea:focus, .dialog__input:focus { border-color: var(--accent-soft); }
+.dialog__field textarea::placeholder, .dialog__input::placeholder { color: var(--muted); }
 .dialog__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .dialog__note { margin: 0; color: var(--muted); font-size: 12.5px; }
 .dialog__error { margin: 0; color: var(--danger); font-size: 13.5px; }
