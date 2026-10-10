@@ -74,6 +74,55 @@ button, textarea { font: inherit; color: inherit; }
   border-radius: 999px;
 }
 
+/* кнопки под переводом и окно «Сообщить об ошибке» */
+.pane__actions { display: flex; gap: 2px; flex: none; }
+.btn.btn--ghost { background: var(--bg); color: var(--text); }  /* .btn: общие правила кнопки идут в файле ниже */
+@media (hover: hover) { .btn.btn--ghost:hover:not(:disabled) { background: #e8edf0; } }
+.dialog {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 60px rgba(18, 24, 38, .18);
+}
+.dialog::backdrop { background: rgba(18, 24, 38, .35); }
+.dialog form { display: flex; flex-direction: column; gap: 12px; padding: 22px; }
+.dialog__title { margin: 0 0 4px; font-size: 19px; font-weight: 800; }
+.dialog__label { display: block; margin-bottom: 4px; color: var(--text-2); font-size: 13px; font-weight: 600; }
+.dialog__quote p {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 15px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 96px;
+  overflow-y: auto;
+}
+.dialog__field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  min-height: 64px;  /* не как у главного поля переводчика (там 120px и растягивание) */
+  flex: none;
+  font-size: 16px;  /* 16px — iPhone не увеличивает страницу при вводе */
+  line-height: 1.45;
+  resize: vertical;
+  outline: 0;
+}
+.dialog__field textarea:focus { border-color: var(--accent-soft); }
+.dialog__field textarea::placeholder { color: var(--muted); }
+.dialog__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.dialog__note { margin: 0; color: var(--muted); font-size: 12.5px; }
+.dialog__error { margin: 0; color: var(--danger); font-size: 13.5px; }
+.dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
 /* вход через Hugging Face: кнопки в стиле переводчика — «Войти» как переключатель языков,
    «Регистрация» как «Перевести» */
 .auth { margin-left: auto; position: relative; }

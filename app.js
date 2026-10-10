@@ -13,6 +13,7 @@ const NAMES = { kum: "Кумыкский", ru: "Русский" };
 const $ = (id) => document.getElementById(id);
 const src = $("src"), out = $("out"), note = $("note"), counter = $("counter");
 const btn = $("translate"), clearBtn = $("clear"), copyBtn = $("copy"), dirBtn = $("direction");
+const reportBtn = $("report");
 
 // направление: по умолчанию определяется автоматически по тексту; после нажатия на переключатель — вручную,
 // пока поле не очистят
@@ -21,6 +22,7 @@ let manual = false;
 let busy = false;
 let lastText = "";
 let current = "";  // что сейчас в поле перевода: копируется и уходит в левое поле при смене языков
+let lastKind = "model";  // откуда последний перевод: model / dictionary (для сообщения об ошибке)
 
 function renderDirection() {
   const [from, to] = direction.split("-");
@@ -54,6 +56,7 @@ function setOutput(text, { error = false, loading = false, hint = "" } = {}) {
   out.classList.toggle("is-loading", loading);
   note.textContent = hint;
   copyBtn.disabled = !current;
+  reportBtn.disabled = !current;
 }
 
 const CHEVRON = '<svg class="word__chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 6.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -131,6 +134,7 @@ function setSenses(senses, hint) {
   out.append(wrap);
   choose(senses[0][0]);
   copyBtn.disabled = false;
+  reportBtn.disabled = false;
 }
 
 let openWord = null;
@@ -253,11 +257,16 @@ function clientId() {
 }
 
 let spaceClient = null;
-async function callSpace(text, dir) {
+async function getSpace() {
   if (!spaceClient) {
     const { Client } = await import("https://cdn.jsdelivr.net/npm/@gradio/client@2/dist/index.min.js");
     spaceClient = await Client.connect(BACKEND, auth ? { token: auth.accessToken } : {});
   }
+  return spaceClient;
+}
+
+async function callSpace(text, dir) {
+  await getSpace();
   const res = await spaceClient.predict("/translate", { text, direction: dir, client: `${clientId()}:${auth ? "in" : "guest"}` });
   return res.data[0];
 }
@@ -302,6 +311,7 @@ async function translate() {
     direction = data.direction;
     renderDirection();
     lastText = text;
+    lastKind = data.senses && data.senses.length ? "dictionary" : "model";
     if (data.senses && data.senses.length) setSenses(data.senses, data.notes.join(" "));
     else setOutput(data.translation, { hint: data.notes.join(" ") });
   } catch (e) {
@@ -385,6 +395,54 @@ copyBtn.addEventListener("click", async () => {
     toast("Не удалось скопировать");
   }
 });
+
+// --- сообщение об ошибке перевода: сервер пересылает автору в Telegram, ничего не сохраняет ---
+const reportDialog = $("report-dialog");
+const reportError = (msg) => { $("report-error").textContent = msg; $("report-error").hidden = !msg; };
+
+function openReport() {
+  if (!current) return;
+  $("report-src").textContent = lastText;
+  $("report-tr").textContent = current;
+  $("report-suggestion").value = "";
+  $("report-comment").value = "";
+  $("report-website").value = "";
+  reportError("");
+  reportDialog.showModal();
+  $("report-suggestion").focus();
+}
+
+async function sendReport(e) {
+  e.preventDefault();
+  const suggestion = $("report-suggestion").value.trim(), comment = $("report-comment").value.trim();
+  if (!suggestion && !comment) return reportError("Напишите, как правильно, или комментарий.");
+  const send = $("report-send");
+  send.disabled = true;
+  send.textContent = "Отправляю…";
+  reportError("");
+  try {
+    const client = await getSpace();
+    await client.predict("/report", {
+      direction, kind: lastKind, src: lastText, translation: current, suggestion, comment,
+      client: clientId(), token: auth ? auth.accessToken : "", website: $("report-website").value,
+    });
+    reportDialog.close();
+    toast("Спасибо! Мы проверим перевод");
+  } catch (err) {
+    console.error(err);
+    const msg = String((err && (err.message || err)) || "").replace(/^'|'$/g, "");
+    reportError(/[а-яё]/i.test(msg) ? msg : "Не удалось отправить. Попробуйте позже.");
+  } finally {
+    send.disabled = false;
+    send.textContent = "Отправить";
+  }
+}
+
+reportBtn.hidden = BACKEND === "local";  // на своём компьютере сообщать некуда
+reportBtn.addEventListener("click", openReport);
+$("report-form").addEventListener("submit", sendReport);
+$("report-cancel").addEventListener("click", () => reportDialog.close());
+reportDialog.addEventListener("click", (e) => { if (e.target === reportDialog) reportDialog.close(); });  // клик мимо окна
 
 renderDirection();
 renderInput();

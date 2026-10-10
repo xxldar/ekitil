@@ -1,6 +1,6 @@
 // Нужен, чтобы страницу можно было установить на телефон как приложение. Оболочка страницы кэшируется,
 // перевод всегда идёт через сеть.
-const CACHE = "ekitil-v21";
+const CACHE = "ekitil-v22";
 const SHELL = ["./", "index.html", "style.css", "app.js", "icon.svg", "manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
