@@ -1,0 +1,5 @@
+# EkiTil — поисковикам можно индексировать всё
+User-agent: *
+Allow: /
+
+Sitemap: https://ekitil.com/sitemap.xml
