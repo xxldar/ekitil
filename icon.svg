@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#5046e5"/>
+  <path d="M138 150h236a28 28 0 0 1 28 28v118a28 28 0 0 1-28 28H262l-62 52v-52h-62a28 28 0 0 1-28-28V178a28 28 0 0 1 28-28z" fill="#fff"/>
+  <text x="256" y="268" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="104" font-weight="800" fill="#5046e5">Ek</text>
+</svg>
