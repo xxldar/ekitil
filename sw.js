@@ -1,7 +1,9 @@
 // Нужен, чтобы страницу можно было установить на телефон как приложение. Оболочка страницы кэшируется,
 // перевод всегда идёт через сеть.
-const CACHE = "ekitil-v22";
-const SHELL = ["./", "index.html", "style.css", "app.js", "icon.svg", "manifest.webmanifest"];
+// app.js и style.css страница подключает с версией (app.js?v=…, её ставят скрипты выкладки), поэтому старые
+// и новые файлы не смешиваются; сама страница при наличии сети каждый раз сверяется с сервером.
+const CACHE = "ekitil-v23";
+const SHELL = ["./", "index.html", "icon.svg", "manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
@@ -17,14 +19,16 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   // чужие адреса (Hugging Face, CDN) и перевод не трогаем
   if (e.request.method !== "GET" || url.origin !== location.origin || url.pathname.includes("/api/")) return;
-  // сначала сеть (свежая версия), без сети — из кэша
+  // страницу — всегда сверяя с сервером (не изменилась — короткий ответ «304», ничего не качается),
+  // остальное — как обычно; без сети — из кэша
+  const request = e.request.mode === "navigate" ? fetch(e.request.url, { cache: "no-cache" }) : fetch(e.request);
   e.respondWith(
-    fetch(e.request)
+    request
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(e.request).then((hit) => hit || caches.match("index.html")))
   );
 });
